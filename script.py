@@ -30,7 +30,7 @@ def create_bitlinks(url, bitly_token):
         response = requests.post(api_url, headers=headers, json=data)
         response.raise_for_status()
         with open('short_link.txt', 'w', encoding='utf-8') as f:
-            f.write('Базовая ссылка: {} | Сокращённая ссылка: {}'.format(response.json()['long_url'], response.json()['link']))
+            f.write(f'Базовая ссылка: {response.json()["long_url"]} | Сокращённая ссылка: {response.json()["link"]}')
     else:
         print('Был введён некорректный урл, попробуйте ещё раз')
 
@@ -46,15 +46,28 @@ def count_clicks(bitlink, bitly_token):
     response = requests.get(api_url, params=params, headers=headers)
     response.raise_for_status()
     with open('count_clicks.txt', 'w', encoding='utf-8') as f:
-        f.write('Сокращённая ссылка: {} | Количество кликов: {}'.format(bitlink, response.json()['total_clicks']))
+        f.write(f'Сокращённая ссылка: {bitlink} | Количество кликов: {response.json()["total_clicks"]}')
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Сокращение ссылок через bit.ly, а также подсчет кликов по ссылке')
-    parser.add_argument('-short', type=str, help='Ссылка которую нужно сократить. Передается урл сайта.')
-    parser.add_argument('-count', type=str, help='Ссылка по которой нужно узнать ко-во кликов. '
-                                                 'Передается сокращённая ссылка bit.ly.')
-    parser.add_argument('-info', type=str, help='Получить информацию по аккаунту. Передается токен.')
+    parser = argparse.ArgumentParser(
+        description='Сокращение ссылок через bit.ly, а также подсчет кликов по ссылке.'
+    )
+    parser.add_argument(
+        '-short',
+        type=str,
+        help='Ссылка которую нужно сократить. Передается урл сайта.'
+    )
+    parser.add_argument(
+        '-count',
+        type=str,
+        help='Ссылка по которой нужно узнать ко-во кликов. Передается сокращённая ссылка bit.ly.'
+    )
+    parser.add_argument(
+        '-info',
+        type=str,
+        help='Получить информацию по аккаунту. Передается токен.'
+    )
     args = parser.parse_args()
     try:
         if args.short:
