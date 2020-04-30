@@ -11,13 +11,10 @@ def get_account_info(bitly_token):
     headers = {
         'Authorization': f'Bearer {bitly_token}'
     }
-    try:
-        response = requests.get(api_url, headers=headers)
-        response.raise_for_status()
-        with open('account_info.json', 'w', encoding='utf-8') as f:
-            json.dump(response.json(), f, indent=4)
-    except requests.exceptions.HTTPError:
-        print(f'Не смог соедениться с {api_url}, статус ошибки: {response.status_code}')
+    response = requests.get(api_url, headers=headers)
+    response.raise_for_status()
+    with open('account_info.json', 'w', encoding='utf-8') as f:
+        json.dump(response.json(), f, indent=4)
 
 
 def create_bitlinks(url, bitly_token):
@@ -29,14 +26,11 @@ def create_bitlinks(url, bitly_token):
         headers = {
             'Authorization': f'Bearer {bitly_token}'
         }
-        try:
-            response = requests.post(api_url, headers=headers, json=data)
-            response.raise_for_status()
-            with open('short_link.txt', 'w', encoding='utf-8') as f:
-                f.write('Базовая ссылка: {} | Сокращённая ссылка: {}'.format(response.json()['long_url'], response.json()['link']))
-        except requests.exceptions.HTTPError:
-            print(f'Ошибка соединения с {api_url}, статус ошибки: {response.status_code}')
-            print('Попробуйте ввести урл ещё раз:')
+
+        response = requests.post(api_url, headers=headers, json=data)
+        response.raise_for_status()
+        with open('short_link.txt', 'w', encoding='utf-8') as f:
+            f.write('Базовая ссылка: {} | Сокращённая ссылка: {}'.format(response.json()['long_url'], response.json()['link']))
     else:
         print('Был введён некорректный урл, попробуйте ещё раз')
 
@@ -54,13 +48,10 @@ def count_clicks(bitlink, bitly_token):
         'units': -1
     }
     api_url = f'https://api-ssl.bitly.com/v4/bitlinks/{bitlink}/clicks/summary'
-    try:
-        response = requests.get(api_url, params=params, headers=headers)
-        response.raise_for_status()
-        with open('count_clicks.txt', 'w', encoding='utf-8') as f:
-            f.write('Сокращённая ссылка: {} | Количество кликов: {}'.format(bitlink, response.json()['total_clicks']))
-    except requests.exceptions.HTTPError:
-        print(f'Ошибка соединения с {api_url}, статус ошибки: {response.status_code}')
+    response = requests.get(api_url, params=params, headers=headers)
+    response.raise_for_status()
+    with open('count_clicks.txt', 'w', encoding='utf-8') as f:
+        f.write('Сокращённая ссылка: {} | Количество кликов: {}'.format(bitlink, response.json()['total_clicks']))
 
 
 def main():
@@ -70,12 +61,15 @@ def main():
                                                  'Передается сокращённая ссылка bit.ly.')
     parser.add_argument('-info', type=str, help='Получить информацию по аккаунту. Передается токен.')
     args = parser.parse_args()
-    if args.short:
-        create_bitlinks(args.short, os.getenv('BITLY_TOKEN'))
-    if args.count:
-        count_clicks(args.count, os.getenv('BITLY_TOKEN'))
-    if args.info:
-        get_account_info(args.info)
+    try:
+        if args.short:
+            create_bitlinks(args.short, os.getenv('BITLY_TOKEN'))
+        if args.count:
+            count_clicks(args.count, os.getenv('BITLY_TOKEN'))
+        if args.info:
+            get_account_info(args.info)
+    except requests.exceptions.HTTPError:
+        print('Возникла ошибка при запросе. Попробуйте ещё раз.')
 
 
 if __name__ == '__main__':
