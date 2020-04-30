@@ -36,11 +36,6 @@ def create_bitlinks(url, bitly_token):
 
 
 def count_clicks(bitlink, bitly_token):
-    bitlink = bitlink.replace('https://', '')
-    is_correct_bitlink = bitlink.startswith('bit.')
-    if not is_correct_bitlink:
-        print('Был введён некорректный урл, попробуйте ещё раз')
-        return False
     headers = {
         'Authorization': f'Bearer {bitly_token}'
     }
@@ -65,7 +60,11 @@ def main():
         if args.short:
             create_bitlinks(args.short, os.getenv('BITLY_TOKEN'))
         if args.count:
-            count_clicks(args.count, os.getenv('BITLY_TOKEN'))
+            short_url = args.count.replace('https://', '')
+            if short_url.startswith('bit.'):
+                count_clicks(short_url, os.getenv('BITLY_TOKEN'))
+            else:
+                print('Был введён некорректный урл, попробуйте ещё раз')
         if args.info:
             get_account_info(args.info)
     except requests.exceptions.HTTPError:
