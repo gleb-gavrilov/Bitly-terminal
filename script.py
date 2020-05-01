@@ -13,29 +13,24 @@ def get_account_info(bitly_token):
     }
     response = requests.get(api_url, headers=headers)
     response.raise_for_status()
-    with open('account_info.json', 'w', encoding='utf-8') as f:
-        json.dump(response.json(), f, indent=4)
+    return response.json()
 
 
-def create_bitlinks(url, bitly_token):
+def get_short_link(url, bitly_token):
     api_url = 'https://api-ssl.bitly.com/v4/bitlinks'
-    if validators.url(url):
-        data = {
-            'long_url': url
-        }
-        headers = {
-            'Authorization': f'Bearer {bitly_token}'
-        }
+    data = {
+        'long_url': url
+    }
+    headers = {
+        'Authorization': f'Bearer {bitly_token}'
+    }
 
-        response = requests.post(api_url, headers=headers, json=data)
-        response.raise_for_status()
-        with open('short_link.txt', 'w', encoding='utf-8') as f:
-            f.write(f'Базовая ссылка: {response.json()["long_url"]} | Сокращённая ссылка: {response.json()["link"]}')
-    else:
-        print('Был введён некорректный урл, попробуйте ещё раз')
+    response = requests.post(api_url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()['link']
 
 
-def count_clicks(bitlink, bitly_token):
+def get_count_clicks(bitlink, bitly_token):
     headers = {
         'Authorization': f'Bearer {bitly_token}'
     }
@@ -45,8 +40,7 @@ def count_clicks(bitlink, bitly_token):
     api_url = f'https://api-ssl.bitly.com/v4/bitlinks/{bitlink}/clicks/summary'
     response = requests.get(api_url, params=params, headers=headers)
     response.raise_for_status()
-    with open('count_clicks.txt', 'w', encoding='utf-8') as f:
-        f.write(f'Сокращённая ссылка: {bitlink} | Количество кликов: {response.json()["total_clicks"]}')
+    return response.json()["total_clicks"]
 
 
 def main():
@@ -71,15 +65,24 @@ def main():
     args = parser.parse_args()
     try:
         if args.short:
-            create_bitlinks(args.short, os.getenv('BITLY_TOKEN'))
+            if validators.url(args.short):
+                bitlink = get_short_link(args.short, os.getenv('BITLY_TOKEN'))
+                with open('short_link.txt', 'w', encoding='utf-8') as f:
+                    f.write(f'Базовая ссылка: {args.short} | Сокращённая ссылка: {bitlink}')
+            else:
+                print('Был введён некорректный урл, попробуйте ещё раз')
         if args.count:
             short_url = args.count.replace('https://', '')
             if short_url.startswith('bit.'):
-                count_clicks(short_url, os.getenv('BITLY_TOKEN'))
+                count_clicks = get_count_clicks(short_url, os.getenv("BITLY_TOKEN"))
+                with open('count_clicks.txt', 'w', encoding='utf-8') as f:
+                    f.write(f'Сокращённая ссылка: {args.count} | Количество кликов: {count_clicks}')
             else:
                 print('Был введён некорректный урл, попробуйте ещё раз')
         if args.info:
-            get_account_info(args.info)
+            account_info = get_account_info(args.info)
+            with open('account_info.json', 'w', encoding='utf-8') as f:
+                json.dump(account_info, f, indent=4)
     except requests.exceptions.HTTPError:
         print('Возникла ошибка при запросе. Попробуйте ещё раз.')
 
